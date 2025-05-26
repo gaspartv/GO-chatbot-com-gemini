@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gaspartv/GO-chatbot-com-gemini/src/validations"
 	"io"
 	"log"
 	"net/http"
@@ -61,46 +62,19 @@ func GeminiHandler(ctx *gin.Context) {
 		return
 	}
 
-	apiUrl := os.Getenv("API_URL")
-	if apiUrl == "" {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Defina a variável de ambiente API_URL"})
-		return
-	}
+	apiUrl := validations.LoadEnv().API_URL
 
 	ctx.JSON(http.StatusOK, gin.H{"link": apiUrl + audio})
 }
 
 func textToAudio(text string) string {
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		fmt.Println("Defina a variável de ambiente OPENAI_API_KEY")
-		return ""
-	}
-
-	url := os.Getenv("OPENAI_API_URL")
-	if url == "" {
-		fmt.Println("Defina a variável de ambiente OPENAI_API_URL")
-		return ""
-	}
+	cfg := validations.LoadEnv()
+	apiKey := cfg.OpenAI_API_Key
+	model := cfg.OpenAI_API_Model
+	voice := cfg.OpenAI_API_Voice
+	instructions := cfg.OpenAI_API_Instructions
+	url := cfg.OpenAI_API_URL
 	url += "audio/speech"
-
-	model := os.Getenv("OPENAI_API_MODEL")
-	if model == "" {
-		fmt.Println("Defina a variável de ambiente OPENAI_API_MODEL")
-		return ""
-	}
-
-	voice := os.Getenv("OPENAI_API_VOICE")
-	if voice == "" {
-		fmt.Println("Defina a variável de ambiente OPENAI_API_VOICE")
-		return ""
-	}
-
-	instructions := os.Getenv("OPENAI_API_INSTRUCTIONS")
-	if instructions == "" {
-		fmt.Println("Defina a variável de ambiente OPENAI_API_INSTRUCTIONS")
-		return ""
-	}
 
 	data := map[string]interface{}{
 		"model":        model,
@@ -158,15 +132,9 @@ func textToAudio(text string) string {
 func geminiAi(text string) string {
 	ctx := context.Background()
 
-	apiKey := os.Getenv("GENAI_API_KEY")
-	if apiKey == "" {
-		log.Fatal("Defina a variável de ambiente GENAI_API_KEY")
-	}
-
-	model := os.Getenv("GENAI_API_MODEL")
-	if model == "" {
-		log.Fatal("Defina a variável de ambiente GENAI_API_MODEL")
-	}
+	cfg := validations.LoadEnv()
+	apiKey := cfg.GenAI_API_Key
+	model := cfg.GenAI_API_Model
 
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  apiKey,
@@ -176,10 +144,12 @@ func geminiAi(text string) string {
 		log.Fatal(err)
 	}
 
+	newText := "Resposta deve ser em português. O texto deve ser montado para que possa ser lido por uma IA 'text-to-speech' (TTS). O texto deve ser claro e conciso, evitando jargões técnicos. O objetivo é fornecer uma resposta útil, curta, direta e compreensível para o usuário." + text
+
 	result, err := client.Models.GenerateContent(
 		ctx,
 		model,
-		genai.Text(text),
+		genai.Text(newText),
 		nil,
 	)
 	if err != nil {

@@ -1,7 +1,7 @@
 package routers
 
 import (
-	"os"
+	"gaspartv/GO-chatbot-com-gemini/src/validations"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -10,13 +10,12 @@ import (
 
 func InitializeRoutes() {
 	router := gin.Default()
+
 	router.Static("/public", "./public")
 
 	InitializeGeminiRoutes(router)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	port := os.Getenv("PORT")
-
-	router.Run("0.0.0.0:" + port)
+	router.Run("0.0.0.0:" + validations.LoadEnv().Port)
 }
